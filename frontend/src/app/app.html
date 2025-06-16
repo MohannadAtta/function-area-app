@@ -1,0 +1,17 @@
+<div class="container">
+  <h2>Area under curve calculator</h2>
+
+  <label for="expression">Function f(x):</label>
+  <input id="expression" [(ngModel)]="expression" (ngModelChange)="onInputChange()" placeholder="e.g., x**2 or Math.sin(x)" />
+
+  <label for="lower_limit">Lower limit (a):</label>
+  <input id="lower_limit" type="number" [(ngModel)]="lower" (ngModelChange)="onInputChange()" />
+
+  <label for="upper_limit">Upper limit (b):</label>
+  <input id="upper_limit" type="number" [(ngModel)]="upper" (ngModelChange)="onInputChange()" />
+
+  <p *ngIf="error" class="error">{{ error }}</p>
+  <p *ngIf="!error && area !== null">Area: {{ area | number: '1.4-4' }}</p>
+
+  <canvas #canvas></canvas>
+</div>
