@@ -7,15 +7,14 @@ from scipy.integrate import quad
 
 app = FastAPI()
 
-debug_origins = [
-    "http://localhost:4200",
-    "http://127.0.0.1:4200",
-    "https://*.github.dev"
-]
+# Allow all origins for development. This is the key change.
+# The ["*"] wildcard allows your frontend, regardless of its URL
+# in the cloud IDE, to communicate with the backend.
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=debug_origins,
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

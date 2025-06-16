@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, inject, AfterViewInit, OnDestroy, OnInit } from '@angular/core';
+import { Component, ElementRef, ViewChild, inject, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -13,7 +13,7 @@ import { debounceTime } from 'rxjs/operators';
   templateUrl: './app.html',
   styleUrls: ['./app.css']
 })
-export class AppComponent implements OnInit, OnDestroy {
+export class App implements OnInit, OnDestroy { // Renamed from AppComponent to App
   expression: string = 'x**2';
   lower: number = 0;
   upper: number = 2;
