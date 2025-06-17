@@ -9,7 +9,7 @@ This project is a full-stack web application. It calculates and visualizes the d
 - Specify lower and upper integration limits
 - Automatically calculates and updates area under the curve
 - Real-time graph updates using Chart.js
-- Fully responsive UI with creative dark mode theme
+<!--- Fully responsive UI with creative dark mode theme -->
 
 ---
 
