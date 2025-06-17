@@ -1,4 +1,8 @@
-/* Modern Integral Calculator Styling */
+/*
+ * Modern Integral Calculator Styling
+ * Developed by Mohannad Atta
+ * LinkedIn: linkedin.com/in/mohannad-atta-a39b0a216/
+ */
 
 /* Root variables for consistent theming */
 :root {
@@ -491,6 +495,30 @@ input[type="text"]::placeholder {
   margin: 0;
   color: var(--text-secondary);
   font-size: 0.8rem;
+}
+
+/* Developer credit styling */
+.developer-credit {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
+
+.developer-credit p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.developer-credit a {
+  color: var(--accent-color);
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.developer-credit a:hover {
+  color: #00b3b3;
+  text-decoration: underline;
 }
 
 /* Right Panel - Chart */
