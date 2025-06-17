@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from scipy.integrate import quad
@@ -12,9 +12,7 @@ app = FastAPI(
 )
 
 # --- CORS Middleware ---
-# This is the updated, more secure configuration.
-# We are now explicitly listing the frontend URLs that are allowed to make requests.
-# This prevents other websites from calling your backend API.
+# This middleware is still good practice for general CORS handling.
 allowed_origins = [
     # The public URL for your Angular app in the cloud IDE
     "https://cautious-space-enigma-v9r47wpvg6whpprj-4200.app.github.dev",
@@ -27,14 +25,11 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["POST"],  # Only allow the POST method that is being used
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # --- Pydantic Models ---
-# These models define the expected structure for API requests and responses.
-# They provide automatic validation and clear documentation.
-
 class IntegrationRequest(BaseModel):
     expression: str
     lower_limit: float
@@ -44,7 +39,7 @@ class IntegrationResponse(BaseModel):
     area: float | None = None
     error: str | None = None
 
-# --- API Endpoint ---
+# --- API Endpoints ---
 @app.post("/integrate", response_model=IntegrationResponse)
 def integrate(req: IntegrationRequest):
     """
@@ -58,10 +53,9 @@ def integrate(req: IntegrationRequest):
         func_to_integrate = parse_expression(req.expression)
         
         # Perform the numerical integration using SciPy's quad function
-        # quad returns the result and an estimated error, we only need the result
         area, _ = quad(func_to_integrate, req.lower_limit, req.upper_limit)
         
-        # Check for non-finite results which can occur with some integrals
+        # Check for non-finite results
         if not abs(area) < float('inf'):
             return IntegrationResponse(error="The integral resulted in an infinite value.")
 
@@ -71,5 +65,16 @@ def integrate(req: IntegrationRequest):
         # Catches parsing errors from utils.py
         return IntegrationResponse(error=str(e))
     except Exception as e:
-        # A general catch-all for any other unexpected errors during integration
+        # A general catch-all for any other unexpected errors
         return IntegrationResponse(error=f"An unexpected error occurred during calculation: {e}")
+
+# ** THE FIX: Manually handle OPTIONS preflight requests **
+# This route intercepts the browser's security check and explicitly sends back
+# the necessary CORS headers, which resolves the issue if the middleware fails to do so.
+@app.options("/integrate")
+def options_integrate():
+    return Response(status_code=200, headers={
+        "Access-Control-Allow-Origin": "https://cautious-space-enigma-v9r47wpvg6whpprj-4200.app.github.dev",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+    })
