@@ -82,7 +82,7 @@ uvicorn main:app --reload
 ```bash
 cd frontend
 npm install
-ng serve
+npx ng serve
 ```
 
 Visit: [http://localhost:4200](http://localhost:4200)
