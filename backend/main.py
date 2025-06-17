@@ -11,21 +11,23 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# --- CORS Middleware ---
-# This is the final, correct, and secure configuration.
-# It explicitly allows your frontend's public URL to make requests.
+# --- CORS Middleware (The FastAPI Way) ---
+# This is the correct implementation for your project. It tells the browser
+# that it is safe for your frontend URL to access this backend.
 allowed_origins = [
+    # The public URL for your Angular app in the cloud IDE
     "https://cautious-space-enigma-v9r47wpvg6whpprj-4200.app.github.dev",
-    "http://localhost:4200", # For local testing
-    "http://127.0.0.1:4200"  # For local testing
+    # Kept for local development and testing if needed
+    "http://localhost:4200",
+    "http://127.0.0.1:4200"
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["POST", "OPTIONS"],
-    allow_headers=["Content-Type"],
+    allow_methods=["*"], # Allows all methods, including POST and the preflight OPTIONS
+    allow_headers=["*"], # Allows all headers
 )
 
 # --- Pydantic Models for type safety and validation ---
