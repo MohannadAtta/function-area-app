@@ -1,6 +1,6 @@
 # 📐 Full-Stack Integral Calculator
 
-This project is a full-stack web application built as part of a technical assessment for the Siemens Werkstudent position. It calculates and visualizes the definite integral (area under the curve) of a user-defined function in real-time.
+This project is a full-stack web application. It calculates and visualizes the definite integral (area under the curve) of a user-defined function in real-time.
 
 ---
 
