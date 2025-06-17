@@ -31,7 +31,7 @@ interface FunctionItem {
 export class AppComponent implements OnInit, OnDestroy {
   // --- Component State ---
   functions: FunctionItem[] = [
-    { id: 1, expression: '(x**2) * sin(x)', color: '#009999', calculateArea: true }
+    { id: 1, expression: 'x**2', color: '#009999', calculateArea: true }
   ];
   lowerLimit: number = -5;
   upperLimit: number = 5;
@@ -39,7 +39,7 @@ export class AppComponent implements OnInit, OnDestroy {
   globalError: string | null = null;
   isLoading: boolean = false;
 
-  private colorPalette: string[] = ['#f43f5e', '#3b82f6', '#eab308', '#8b5cf6'];
+  private colorPalette: string[] = ['#009999', '#f43f5e', '#3b82f6', '#eab308', '#8b5cf6', '#10b981', '#f97316'];
   private inputUpdate$ = new Subject<void>();
   private subscription: Subscription = new Subscription();
 
@@ -56,21 +56,34 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.subscription = this.inputUpdate$.pipe(
       debounceTime(500),
-      map(() => JSON.stringify(this.functions.map(f => ({...f, area: null, error: null}))) + `|${this.lowerLimit}|${this.upperLimit}`),
+      map(() => {
+        // Create a unique key that includes all function states and calculation selections
+        const functionsState = this.functions.map(f => ({
+          id: f.id,
+          expression: f.expression,
+          calculateArea: f.calculateArea
+        }));
+        return JSON.stringify(functionsState) + `|${this.lowerLimit}|${this.upperLimit}`;
+      }),
       distinctUntilChanged(),
       tap(() => {
         this.isLoading = true;
         this.globalError = null;
         this.totalCalculatedArea = null;
-        this.functions.forEach(f => { f.area = null; f.error = null; });
+        // Reset calculation results
+        this.functions.forEach(f => { 
+          f.area = null; 
+          f.error = null; 
+        });
       }),
       switchMap(() => this.calculateAllSelectedAreas())
     ).subscribe(results => {
       this.isLoading = false;
       let totalArea = 0;
       let hasCalculatedArea = false;
+      let hasErrors = false;
       
-      // --- THE FIX: Using the 'in' operator for robust type guarding ---
+      // Process results for each function
       results.forEach(result => {
         const func = this.functions.find(f => f.id === result.id);
         if (func) {
@@ -83,6 +96,7 @@ export class AppComponent implements OnInit, OnDestroy {
           // Otherwise, it must be an error response.
           else if ('error' in result && result.error) {
             func.error = result.error;
+            hasErrors = true;
             // Use the first error encountered as the global error message.
             if (!this.globalError) {
               this.globalError = `Error in function "${func.expression}": ${result.error}`;
@@ -91,12 +105,17 @@ export class AppComponent implements OnInit, OnDestroy {
         }
       });
       
-      if (hasCalculatedArea && !this.globalError) {
+      // Only set total area if we have calculated areas and no errors
+      if (hasCalculatedArea && !hasErrors) {
         this.totalCalculatedArea = totalArea;
+      } else if (hasErrors) {
+        this.totalCalculatedArea = null;
       }
       
       this.renderChart();
     });
+    
+    // Initial calculation
     this.onInputChange();
   }
   
@@ -106,12 +125,12 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   addFunction(): void {
-    const newColor = this.colorPalette[ (this.functions.length - 1) % this.colorPalette.length ] || '#ffffff';
+    const newColor = this.colorPalette[this.functions.length % this.colorPalette.length];
     this.functions.push({
       id: Date.now(),
       expression: 'x*cos(x)',
       color: newColor,
-      calculateArea: false,
+      calculateArea: false, // Default to unchecked for new functions
     });
     this.onInputChange();
   }
@@ -126,7 +145,11 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private calculateAllSelectedAreas() {
-    const functionsToCalculate = this.functions.filter(f => f.calculateArea && f.expression.trim() !== '');
+    // Only calculate for functions that are selected AND have non-empty expressions
+    const functionsToCalculate = this.functions.filter(f => 
+      f.calculateArea && 
+      f.expression.trim() !== ''
+    );
     
     if (functionsToCalculate.length === 0) {
       this.renderChart(); // Update chart to remove shading
@@ -140,7 +163,10 @@ export class AppComponent implements OnInit, OnDestroy {
         upper_limit: this.upperLimit,
       }).pipe(
         map(response => ({ id: func.id, ...response })),
-        catchError(err => of({ id: func.id, error: 'Failed to connect to backend.' }))
+        catchError(err => {
+          console.error(`Error calculating area for function ${func.expression}:`, err);
+          return of({ id: func.id, error: 'Failed to connect to backend or calculation error.' });
+        })
       )
     );
 
@@ -149,7 +175,8 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private renderChart(): void {
     if (!this.chartCanvas) return;
-    const points = 101;
+    
+    const points = 201; // Increased for smoother curves
     const labels: number[] = [];
     for (let i = 0; i < points; i++) {
         const x = this.lowerLimit + (i * (this.upperLimit - this.lowerLimit)) / (points - 1);
@@ -159,19 +186,40 @@ export class AppComponent implements OnInit, OnDestroy {
     const datasets = this.functions.map(funcItem => {
       const data: (number | null)[] = [];
       try {
-        const func = new Function('x', `with(Math){return ${funcItem.expression}}`);
-        labels.forEach(x => data.push(isFinite(func(x)) ? func(x) : null));
+        // Create a safer evaluation function
+        const func = new Function('x', `
+          with(Math) {
+            try {
+              const result = ${funcItem.expression};
+              return (typeof result === 'number' && isFinite(result)) ? result : null;
+            } catch (e) {
+              return null;
+            }
+          }
+        `);
+        
+        labels.forEach(x => {
+          try {
+            const result = func(x);
+            data.push(result);
+          } catch (e) {
+            data.push(null);
+          }
+        });
 
         return {
-          label: `f(x) = ${funcItem.expression}`,
+          label: `f(x) = ${funcItem.expression}${funcItem.calculateArea ? ' (Area: ' + (funcItem.area?.toFixed(3) || 'calculating...') + ')' : ''}`,
           data,
           borderColor: funcItem.color,
-          backgroundColor: funcItem.calculateArea && !funcItem.error ? `rgba(${this.hexToRgb(funcItem.color)}, 0.1)` : 'transparent',
-          fill: funcItem.calculateArea && !funcItem.error ? 'origin' : false,
+          backgroundColor: funcItem.calculateArea && !funcItem.error && funcItem.area !== null ? 
+            `${funcItem.color}20` : 'transparent', // Using hex transparency
+          fill: funcItem.calculateArea && !funcItem.error && funcItem.area !== null ? 'origin' : false,
           tension: 0.4,
-          pointRadius: 0
+          pointRadius: 0,
+          borderWidth: 2
         } as ChartDataset<'line', (number | null)[]>;
-      } catch {
+      } catch (error) {
+        console.error(`Error creating dataset for function ${funcItem.expression}:`, error);
         return null;
       }
     }).filter((ds): ds is ChartDataset<'line', (number | null)[]> => ds !== null);
@@ -193,24 +241,62 @@ export class AppComponent implements OnInit, OnDestroy {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: {
+          intersect: false,
+          mode: 'index'
+        },
         scales: {
-          x: { grid: { color: '#30363d' }, ticks: { color: '#7d8590' } },
-          y: { grid: { color: '#30363d' }, ticks: { color: '#7d8590' } }
+          x: { 
+            grid: { color: '#30363d' }, 
+            ticks: { color: '#7d8590' },
+            title: {
+              display: true,
+              text: 'x',
+              color: '#e6edf3'
+            }
+          },
+          y: { 
+            grid: { color: '#30363d' }, 
+            ticks: { color: '#7d8590' },
+            title: {
+              display: true,
+              text: 'f(x)',
+              color: '#e6edf3'
+            }
+          }
         },
         plugins: {
-          legend: { labels: { color: '#e6edf3' } }
+          legend: { 
+            labels: { 
+              color: '#e6edf3',
+              usePointStyle: true,
+              padding: 20
+            }
+          },
+          tooltip: {
+            backgroundColor: '#161b22',
+            titleColor: '#e6edf3',
+            bodyColor: '#e6edf3',
+            borderColor: '#30363d',
+            borderWidth: 1
+          }
         }
       }
     };
   }
 
-  private hexToRgb(hex: string): string {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '0,0,0';
-  }
-
   private destroyChart(): void {
     this.chart?.destroy();
     this.chart = null;
+  }
+
+  // Helper method to get count of selected functions
+  get selectedFunctionsCount(): number {
+    return this.functions.filter(f => f.calculateArea).length;
+  }
+
+  // Helper method to check if any function has errors
+  get hasAnyErrors(): boolean {
+    return this.functions.some(f => f.error !== null);
   }
 }
