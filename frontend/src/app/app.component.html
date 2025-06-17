@@ -5,7 +5,6 @@
   </header>
 
   <section class="form-grid">
-    <!-- Expression Input -->
     <div class="form-group">
       <label for="expression">Function f(x):</label>
       <input 
@@ -15,8 +14,6 @@
         (ngModelChange)="onInputChange()"
         placeholder="e.g., x**2 * sin(x)">
     </div>
-
-    <!-- Lower Limit -->
     <div class="form-group">
       <label for="lowerLimit">Lower Limit (a):</label>
       <input 
@@ -25,8 +22,6 @@
         [(ngModel)]="lowerLimit" 
         (ngModelChange)="onInputChange()">
     </div>
-
-    <!-- Upper Limit -->
     <div class="form-group">
       <label for="upperLimit">Upper Limit (b):</label>
       <input 
@@ -37,24 +32,18 @@
     </div>
   </section>
 
-  <!-- Results Section -->
   <section class="results-section">
-    <!-- Display Calculated Area -->
     <div *ngIf="!error && calculatedArea !== null" class="result-display">
       <h2>Calculated Area:</h2>
       <p class="area-value">{{ calculatedArea | number: '1.0-6' }}</p>
     </div>
-
-    <!-- Display Errors -->
     <div *ngIf="error" class="error-display">
       <h2>Error:</h2>
       <p>{{ error }}</p>
     </div>
   </section>
   
-  <!-- Chart Visualization -->
   <section class="chart-container">
     <canvas #chartCanvas></canvas>
   </section>
-
 </main>

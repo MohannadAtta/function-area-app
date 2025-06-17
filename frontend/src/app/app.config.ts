@@ -5,15 +5,15 @@ import { FormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-// This is where you configure the app for standalone components
+// This is the correct modern configuration for a standalone Angular app
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideRouter([]), // Provide router even if no routes are defined
+    provideRouter([]),
     provideHttpClient(), // Provides the modern HttpClient
     importProvidersFrom(
       BrowserModule,
       FormsModule, // Needed for [(ngModel)]
-      BrowserAnimationsModule // Needed for some UI features and good practice
+      BrowserAnimationsModule // Needed for animations and Chart.js
     )
   ]
 };
