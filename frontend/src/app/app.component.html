@@ -4,57 +4,70 @@
   <aside class="control-panel">
     <header class="panel-header">
       <h1>Integral Calculator</h1>
-      <p>Define a function to visualize and calculate the area under its curve.</p>
+      <p>Select functions to calculate their combined area under the curve.</p>
     </header>
 
     <section class="input-section">
-      <div class="form-group">
-        <label for="expression">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12 2.5a.5.5 0 0 1 .5.5v10a.5.5 0 0 1-1 0V3a.5.5 0 0 1 .5-.5zM11 5.498a.5.5 0 0 1 .5.5v1.99a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zM8.5 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11a.5.5 0 0 1 .5-.5z M7.5 5.498a.5.5 0 0 1 .5.5v1.99a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5z M5 2.5a.5.5 0 0 1 .5.5v10a.5.5 0 0 1-1 0V3a.5.5 0 0 1 .5-.5zM4 5.498a.5.5 0 0 1 .5.5v1.99a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5z M1.5 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11a.5.5 0 0 1 .5-.5z"/></svg>
-          Function f(x):
-        </label>
-        <input 
-          id="expression"
-          type="text"
-          [(ngModel)]="expression" 
-          (ngModelChange)="onInputChange()"
-          placeholder="e.g., x**3 * cos(x)">
-      </div>
+<!-- Loop through each function and display a checkbox -->
+<div *ngFor="let func of functions; let i = index" class="function-row">
+  <div class="checkbox-wrapper">
+    <input 
+      type="checkbox"
+      id="calculate-{{func.id}}"
+      class="custom-checkbox"
+      [(ngModel)]="func.calculateArea"
+      (ngModelChange)="onInputChange()">
+    <label for="calculate-{{func.id}}" class="checkbox-label"></label>
+  </div>
+  <div class="form-group">
+    <label for="expression-{{func.id}}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" [attr.fill]="func.color" viewBox="0 0 16 16"><path d="M12 2.5a.5.5 0 0 1 .5.5v10a.5.5 0 0 1-1 0V3a.5.5 0 0 1 .5-.5zM11 5.498a.5.5 0 0 1 .5.5v1.99a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zM8.5 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11a.5.5 0 0 1 .5-.5z M7.5 5.498a.5.5 0 0 1 .5.5v1.99a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5z M5 2.5a.5.5 0 0 1 .5.5v10a.5.5 0 0 1-1 0V3a.5.5 0 0 1 .5-.5zM4 5.498a.5.5 0 0 1 .5.5v1.99a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5z M1.5 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11a.5.5 0 0 1 .5-.5z"/></svg>
+      Function f(x)
+    </label>
+    <input 
+      id="expression-{{func.id}}"
+      type="text"
+      [(ngModel)]="func.expression" 
+      (ngModelChange)="onInputChange()"
+      placeholder="e.g., x**2 * sin(x)">
+  </div>
+  <button *ngIf="functions.length > 1" (click)="removeFunction(func.id)" class="remove-btn" title="Remove function">&times;</button>
+</div>
+      
+      <button (click)="addFunction()" class="add-btn">Add Function to Compare</button>
+      
+      <hr class="divider">
       
       <div class="limits-grid">
         <div class="form-group">
-          <label for="lowerLimit">Lower Limit (a):</label>
-          <input 
-            id="lowerLimit"
-            type="number"
-            [(ngModel)]="lowerLimit" 
-            (ngModelChange)="onInputChange()">
+          <label for="lowerLimit">Global Lower Limit (a):</label>
+          <input id="lowerLimit" type="number" [(ngModel)]="lowerLimit" (ngModelChange)="onInputChange()">
         </div>
         <div class="form-group">
-          <label for="upperLimit">Upper Limit (b):</label>
-          <input 
-            id="upperLimit"
-            type="number"
-            [(ngModel)]="upperLimit" 
-            (ngModelChange)="onInputChange()">
+          <label for="upperLimit">Global Upper Limit (b):</label>
+          <input id="upperLimit" type="number" [(ngModel)]="upperLimit" (ngModelChange)="onInputChange()">
         </div>
       </div>
     </section>
 
+    <!-- Display total area of all selected functions -->
     <section class="results-display">
       <div *ngIf="isLoading" class="loading-state">
         <div class="spinner"></div>
         <span>Calculating...</span>
       </div>
 
-      <div *ngIf="!isLoading && error" class="error-state">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5a.905.905 0 0 1 .9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
-        <p>{{ error }}</p>
+      <div *ngIf="!isLoading && globalError" class="error-state">
+        <p>{{ globalError }}</p>
       </div>
 
-      <div *ngIf="!isLoading && !error && calculatedArea !== null" class="success-state">
-        <span class="result-label">Calculated Area</span>
-        <span class="result-value">{{ calculatedArea | number: '1.0-6' }}</span>
+      <div *ngIf="!isLoading && !globalError && totalCalculatedArea !== null" class="success-state">
+        <span class="result-label">Total Calculated Area</span>
+        <span class="result-value">{{ totalCalculatedArea | number: '1.0-6' }}</span>
+      </div>
+      
+      <div *ngIf="!isLoading && !globalError && totalCalculatedArea === null" class="success-state">
+        <span class="result-label">Select a function to calculate its area.</span>
       </div>
     </section>
 
